@@ -1,3 +1,5 @@
+#include "windows.h"
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -8,7 +10,12 @@
 #include <limits>
 #include <chrono>
 #include <thread>
-#include "windows.h"
+#include <sstream>
+#include <iomanip>
+#include <unordered_set>
+#include <map>
+#include <filesystem>
+#include <atomic>
 
 using namespace std;
 
@@ -36,6 +43,14 @@ struct LogEntry {
 
 // Global variables
 vector<LogEntry> logs;
+vector<string> searchHistory;
+
+unordered_map<string, vector<int>> levelIndex;
+unordered_map<string, vector<int>> keywordIndex;
+
+atomic<bool> tailing(false);
+
+int PAGE_SIZE = 10;
 
 // Function declarations
 void setupConsole();
@@ -117,13 +132,35 @@ void displayMenu() {
     cout << "\n  " << BRIGHT_CYAN << "Select an option (1-8): " << RESET;
 }
 
-// ======== Helper: Check if logs are empty =========
+// ======== Helper =========
 bool logsEmpty() {
     if (logs.empty()) {
         cout << RED << "\n  ⚠ No logs loaded. Please load a log file first.\n" << RESET;
         return true;
     }
     return false;
+}
+
+tm parseTimestamp(const string& ts) {
+    tm t{};
+    istringstream ss(ts);
+    ss >> get_time(&t, "%Y-%m-%d %H:%M:%S");
+    return t;
+}
+
+void buildIndexes() {
+    levelIndex.clear();
+    keywordIndex.clear();
+
+    for(int i = 0; i < logs.size(); ++i) {
+        levelIndex[logs[i].level].push_back(i);
+
+        istringstream iss(logs[i].message);
+        string word;
+        while (iss >> word){
+            keywordIndex[word].push_back(i);
+        }
+    }
 }
 
 // ======== Load Log File =========

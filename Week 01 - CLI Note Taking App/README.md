@@ -63,14 +63,14 @@ Notes are saved in `notes.json` in the following format:
 
 ```
 ╔═════════════════════════════════════════════════════════════════╗
-║                        MAIN MENU                              ║
-╠════════════════════════════════════════════════════════════════╣
-║  1. [+] Create Note      5. [?] Search Notes                  ║
-║  2. [=] View Note        6. [*] Sort Notes                    ║
-║  3. [~] Edit Note        7. [S] Save Notes                    ║
-║  4. [X] Delete Note      8. [L] Load Notes                    ║
-║                                                               ║
-║  0. [!] Exit                                                 ║
+║                        MAIN MENU                                ║
+╠═════════════════════════════════════════════════════════════════╣
+║  1. [+] Create Note      5. [?] Search Notes                    ║
+║  2. [=] View Note        6. [*] Sort Notes                      ║
+║  3. [~] Edit Note        7. [S] Save Notes                      ║
+║  4. [X] Delete Note      8. [L] Load Notes                      ║
+║                                                                 ║
+║  0. [!] Exit                                                    ║
 ╚═════════════════════════════════════════════════════════════════╝
 ```
 
