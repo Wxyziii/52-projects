@@ -1,0 +1,26 @@
+2026-01-14 11:00:00 [ERROR] Database connection failed
+2026-01-14 11:00:01 [ERROR] Retry attempt 1 failed
+2026-01-14 11:00:02 [ERROR] Retry attempt 2 failed
+2026-01-14 11:00:03 [ERROR] Retry attempt 3 failed
+2026-01-14 11:00:04 [WARN] Maximum retry attempts reached
+2026-01-14 11:00:05 [ERROR] Unable to establish connection
+2026-01-14 11:00:10 [ERROR] API endpoint returned 500 error
+2026-01-14 11:00:11 [ERROR] External service unavailable
+2026-01-14 11:00:12 [ERROR] Request timeout after 30 seconds
+2026-01-14 11:00:15 [ERROR] Authentication service down
+2026-01-14 11:00:16 [ERROR] Cannot validate user credentials
+2026-01-14 11:00:17 [ERROR] Login attempts failing
+2026-01-14 11:00:20 [WARN] Error rate exceeding threshold
+2026-01-14 11:00:21 [ERROR] Cache service not responding
+2026-01-14 11:00:22 [ERROR] Redis connection timeout
+2026-01-14 11:00:25 [ERROR] File system write error
+2026-01-14 11:00:26 [ERROR] Disk space critically low
+2026-01-14 11:00:27 [ERROR] Cannot create temporary files
+2026-01-14 11:00:30 [WARN] System entering degraded mode
+2026-01-14 11:00:31 [ERROR] Message queue full
+2026-01-14 11:00:32 [ERROR] Cannot process incoming requests
+2026-01-14 11:00:35 [ERROR] Memory allocation failed
+2026-01-14 11:00:36 [ERROR] OutOfMemoryException thrown
+2026-01-14 11:00:37 [ERROR] Application crash imminent
+2026-01-14 11:00:40 [WARN] Emergency shutdown initiated
+2026-01-14 11:00:41 [ERROR] Shutdown timeout - forcing termination

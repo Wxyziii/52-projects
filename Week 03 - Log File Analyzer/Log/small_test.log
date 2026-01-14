@@ -1,0 +1,10 @@
+2026-01-14 09:00:00 [INFO] Application started successfully
+2026-01-14 09:00:01 [INFO] Database connection established
+2026-01-14 09:00:05 [WARN] Connection pool at 80% capacity
+2026-01-14 09:00:10 [ERROR] Failed to connect to external API
+2026-01-14 09:00:15 [INFO] Retrying API connection
+2026-01-14 09:00:20 [INFO] API connection successful
+2026-01-14 09:00:25 [INFO] User authentication completed
+2026-01-14 09:00:30 [WARN] Slow database query detected
+2026-01-14 09:00:35 [ERROR] Timeout error on query execution
+2026-01-14 09:00:40 [INFO] Application shutdown initiated

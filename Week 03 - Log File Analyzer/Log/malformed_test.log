@@ -1,0 +1,15 @@
+2026-01-14 10:00:00 [INFO] Application started normally
+2026-01-14 10:00:01 [INFO] All systems operational
+This is a malformed log entry without proper format
+2026-01-14 10:00:02 [WARN] Warning message here
+Another bad line
+   
+2026-01-14 10:00:03 [ERROR] Critical error detected
+MALFORMED - no timestamp or level
+2026-01-14 10:00:04 [INFO] Recovery successful
+[ERROR] Missing timestamp at the start
+2026-01-14 10:00:05 [INFO] System stable
+2026-01-14 Invalid format here
+2026-01-14 10:00:06 [DEBUG] Debug message with wrong level
+2026-01-14 10:00:07 [INFO] Final valid entry
+Just some random text
