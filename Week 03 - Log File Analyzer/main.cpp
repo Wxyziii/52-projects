@@ -152,11 +152,11 @@ void displayMenu() {
     cout << "  " << CYAN << "║" << RESET << "  " << GREEN  << "2."  << RESET << " View All Logs            " << MAGENTA        << "8."  << RESET << " View Search History  " << CYAN << "║" << RESET << "\n";
     cout << "  " << CYAN << "║" << RESET << "  " << BLUE   << "3."  << RESET << " View INFO Logs           " << BRIGHT_MAGENTA << "9."  << RESET << " Export Filtered Logs " << CYAN << "║" << RESET << "\n";
     cout << "  " << CYAN << "║" << RESET << "  " << YELLOW << "4."  << RESET << " View WARN Logs           " << BRIGHT_BLUE    << "10." << RESET << " View Logs by Time   " << CYAN << "║" << RESET << "\n";
-    cout << "  " << CYAN << "║" << RESET << "  " << RED    << "5."  << RESET << " View ERROR Logs          " << BRIGHT_RED     << "11." << RESET << " Exit                " << CYAN << "║" << RESET << "\n";
-    cout << "  " << CYAN << "║" << RESET << "  " << BLUE   << "6."  << RESET << " Search Logs                                      "<< CYAN << "║" << RESET << "\n";
+    cout << "  " << CYAN << "║" << RESET << "  " << RED    << "5."  << RESET << " View ERROR Logs          " << BRIGHT_RED     << "11." << RESET << " Search  & Export    " << CYAN << "║" << RESET << "\n";
+    cout << "  " << CYAN << "║" << RESET << "  " << BLUE   << "6."  << RESET << " Search Logs              "<< CYAN            << "12"  << RESET << " Exit                 " << CYAN << "║" << RESET << "\n";
     cout << "  " << CYAN << "║" << RESET << "                                                      " << CYAN << "║" << RESET << "\n";
     cout << "  " << CYAN << "╚══════════════════════════════════════════════════════╝" << RESET << "\n";
-    cout << "\n  " << BRIGHT_CYAN << "Select an option (1-11): " << RESET;
+    cout << "\n  " << BRIGHT_CYAN << "Select an option (1-12): " << RESET;
 }
 
 
@@ -259,8 +259,18 @@ void loadLogFile() {
         return;
     }
 
+    file.seekg(0, std::ios::end);
+    size_t fileSize = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    if(fileSize > 10 * 1024 * 1024) {
+        double sizeMB = fileSize / (1024.0 * 1024.0);
+            cout << YELLOW << "  ⚠ Large file detected (" << fixed << setprecision(1) << sizeMB << "MB). Loading may take time...\n" << RESET;
+    }
+
     logs.clear();
     logs.shrink_to_fit();
+    logs.reserve(1000);
     string line;
     smatch match;
     int skipped = 0;
@@ -313,6 +323,51 @@ void viewLogs(const string& filter) {
 
 void viewLogsPaginated(const string& filter, int pageSize = 20) {
     if(logsEmpty()) return;
+
+    vector<LogEntry> filtered = getFilteredLogs(filter);
+    if(filtered.empty()) {
+        cout << RED << "\n  ✗ No logs match the filter.\n" << RESET;
+        return;
+    }
+
+    size_t totalPages = (filtered.size() + pageSize - 1) / pageSize;
+    size_t currentPage = 0;
+
+    while(true) {
+        cout << "\033[H\033[2J"; // Clear screen
+        cout << "\n  " << BRIGHT_CYAN << "════════════════════════════════════════════════════════════" << RESET << "\n";
+        if(filter.empty()) {
+            cout << "  " << BRIGHT_CYAN << "ALL LOGS (Page " << (currentPage + 1) << "/" << totalPages << ")" << RESET << "\n";
+        } else {
+            cout << "  " << BRIGHT_CYAN << filter << " LOGS (Page " << (currentPage + 1) << "/" << totalPages << ")" << RESET << "\n";
+        }
+        cout << "  " << BRIGHT_CYAN << "════════════════════════════════════════════════════════════" << RESET << "\n\n";
+
+        size_t start = currentPage * pageSize;
+        size_t end = std::min(start + pageSize, filtered.size());
+
+        for(size_t i = start; i < end; ++i) {
+            const auto& entry = filtered[i];
+            string levelColor = getLevelColor(entry.level);
+            cout << "  " << CYAN << entry.timestamp << RESET << " [" << levelColor << entry.level << RESET << "] " << entry.message << "\n";
+        }
+
+        cout << "\n  " << BRIGHT_CYAN << "─────────────────────────────────────────────────────────────" << RESET << "\n";
+        cout << "  " << BRIGHT_CYAN << "Showing " << (start + 1) << "-" << end << " of " << filtered.size() << " entries" << RESET << "\n";
+        cout << "  [N]ext  [P]revious  [Q]uit: ";
+
+        char input;
+        cin >> input;
+        input = std::tolower(input);
+
+        if(input == 'n' && currentPage < totalPages -1) {
+            currentPage++;
+        } else if(input == 'p' && currentPage < 0) {
+            currentPage--;
+        } else if(input == 'q') {
+            break;
+        }
+    }
 }
 
 // ======== Search Logs =========
@@ -362,6 +417,66 @@ void searchLogs() {
     cout << "\n";
 }
 
+void searchAndExport() {
+    if(logsEmpty()) return;
+
+    string keyword;
+    cout << "\n  " << YELLOW << "Enter search Keyword: " << RESET;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    getline(cin, keyword);
+
+
+    if(keyword.empty()) {
+        cerr << RED << "  ✗ No search keyword provided.\n" << RESET;
+        return;
+    }
+
+    searchHistory.push_back(keyword);
+
+    vector<LogEntry> results;
+    for(const auto& entry : logs) {
+        if(caseInsensitiveSearch(entry.message, keyword) || caseInsensitiveSearch(entry.level, keyword)) {
+            results.push_back(entry);
+        }
+    }
+
+    if(results.empty()) {
+        cout << RED << "\n  ✗ No matching logs found.\n" << RESET;
+        return;
+    }
+
+    cout << "\n  " << BRIGHT_CYAN << "════════════════════════════════════════════════════════════" << RESET << "\n";
+    cout << "  " << BRIGHT_CYAN << "SEARCH RESULTS FOR: \"" << keyword << "\"" << RESET << "\n";
+    cout << "  " << BRIGHT_CYAN << "════════════════════════════════════════════════════════════" << RESET << "\n\n";
+
+    int displayCount = std::min(10, (int)results.size());
+    for(int i = 0; i < displayCount; ++i){
+        const auto& entry = results[i];
+        string levelColor = getLevelColor(entry.level);
+        cout << "  " << CYAN << entry.timestamp << RESET << " [" << levelColor << entry.level << RESET << "] " << entry.message << "\n";
+
+        if(results.size() > 10) {
+            cout << "  " << YELLOW << "... and " << (results.size() - 10) << "more matches\n" << RESET;
+        }
+
+        cout << "\n  " << GREEN << "✓ Found " << results.size() << " matches.\n" << RESET;
+        cout << "  Do you want to export these results? (y/n): ";
+
+        char choice;
+        cin >> choice;
+
+        if(choice == 'y' || choice == 'Y') {
+            ostringstream desc;
+            desc << "Search results for: \"" << keyword << "\"";
+            exportLogs(results, desc.str());
+            return;
+        } else {
+            cout << YELLOW << "  Export cancelled.\n" << RESET;
+            return;
+        }
+    }
+}
+
 // ======== Show Statistics =========
 void showStatistics() {
     if (logsEmpty()) return;
@@ -389,7 +504,8 @@ void showStatistics() {
         double percentage = logs.empty() ? 0.0 : (count * 100.0 / logs.size());
 
         int barLength = maxCount > 0 ? (count * 50) / maxCount : 0;
-        string bar(barLength, '█');
+        string bar;
+        for(int i = 0; i < barLength; ++i) bar += "█";
 
         cout << "  " << levelColor << std::left << std::setw(8) << level << RESET 
              << " " << levelColor << bar << RESET 
@@ -400,7 +516,8 @@ void showStatistics() {
         if (std::find(levels.begin(), levels.end(), pair.first) == levels.end()) {
             double percentage = logs.empty() ? 0.0 : (pair.second * 100.0 / logs.size());
             int barLength = maxCount > 0 ? (pair.second * 50) / maxCount : 0;
-            string bar(barLength, '█');
+            string bar;
+            for(int i = 0; i < barLength; ++i) bar += "█";
 
             cout << "  " << CYAN << std::left << std::setw(8) << pair.first << RESET 
                  << " " << CYAN << bar << RESET 
@@ -448,6 +565,7 @@ void exportLogs(const vector<LogEntry> & entries, const string& description) {
 
     if(filename.empty()) {
         cerr << RED << "  ✗ No filename provided.\n" << RESET;
+        return;
     }
 
     auto now = std::chrono::system_clock::now();
@@ -468,6 +586,25 @@ void exportLogs(const vector<LogEntry> & entries, const string& description) {
     outFile << "Exported: " << std::put_time(std::localtime(&time_t_now), "%Y-%m-%d %H:%M:%S") << "\n";
     outFile << "Total Entries: " << entries.size() << "\n";
     outFile << "========================================\n\n";
+
+    unordered_map<string, int> levelCount;
+    for(const auto& entry : entries) {
+        levelCount[entry.level]++;
+    }
+
+    outFile << "\n--- Statistics ---\n";
+    for (const auto& pair : levelCount) {
+        double percentage = (pair.second * 100.0) / entries.size();
+        outFile << pair.first << ": " << pair.second << " (" << fixed << setprecision(1) << percentage << "%\n";
+    }
+
+    if(!entries.empty()) {
+        outFile << "\nTime Range:\n";
+        outFile << " First " << entries.front().timestamp << '\n';
+        outFile << " Last " << entries.back().timestamp << '\n';
+    }
+    outFile << "========================================\n\n";
+
 
     for(const auto& entry : entries) {
         outFile << entry.timestamp << " [" << entry.level << "] " << entry.message << "\n";
@@ -517,7 +654,7 @@ bool parseTimestamp(const string& timestamp, std::tm& tm_struct) {
 bool isWithinTimeRange(const string& timestamp, const string& startTime, const string& endTime) {
     std::tm entry_tm = {}, start_tm = {}, end_tm = {};
 
-    if(!parseTimestamp(timestamp, entry_tm) || !parseTimestamp(timestamp, start_tm) || !parseTimestamp(endTime, end_tm)) {
+    if(!parseTimestamp(timestamp, entry_tm) || !parseTimestamp(startTime, start_tm) || !parseTimestamp(endTime, end_tm)) {
         return false;
     }
 
@@ -535,8 +672,19 @@ void viewLogsByTimeRange() {
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     getline(cin, startTime);
 
-    cout << " " << YELLOW << "Enter end time (YYYY-MM-DD HH-MM-SS: )" << RESET;
+    cout << " " << YELLOW << "Enter end time (YYYY-MM-DD HH:MM:SS: )" << RESET;
     getline(cin, endTime);
+
+    std::tm test_tm = {};
+    if(!parseTimestamp(startTime, test_tm)) {
+        cout << RED << "\n  ✗ Invalid start time format. Please use YYYY-MM-DD HH:MM:SS\n" << RESET;
+        return;
+    }
+    test_tm = {};
+    if(!parseTimestamp(endTime, test_tm)) {
+        cout << RED << "\n  ✗ Invalid end time format. Please use YYYY-MM-DD HH:MM:SS\n" << RESET;
+        return;
+    }
 
     cout << "\n  " << BRIGHT_CYAN << "════════════════════════════════════════════════════════════" << RESET << "\n";
     cout << "  " << BRIGHT_CYAN << "LOGS FROM " << startTime << " TO " << endTime << RESET << "\n";
@@ -636,7 +784,10 @@ int main() {
             case 10:
                 viewLogsByTimeRange();
                 break;
-            case 11: 
+            case 11:
+                searchAndExport();
+                break;
+            case 12: 
                 cout << "\n  " << GREEN << "✓ Exiting Log Analyzer. Goodbye!\n\n" << RESET; 
                 return 0;
             default: 
