@@ -33,6 +33,8 @@ using std::setprecision;
 using std::numeric_limits;
 using std::streamsize;
 using std::regex_match;
+using std::transform;
+using std::tolower;
 
 // ANSI Color codes
 #define RESET          "\033[0m"
@@ -79,6 +81,8 @@ void showStatistics();
 void viewSearchHistory();
 bool logsEmpty();
 string getLevelColor(const string& level);
+string toLowerStr(const string& str);
+bool caseInsensitiveSearch(const string& text, const string& keyword);
 
 // ======== Console Setup =========
 void setupConsole() {
@@ -161,6 +165,21 @@ string getLevelColor(const string& level) {
     if (level == "WARN") return YELLOW;
     if (level == "ERROR") return RED;
     return RESET;
+}
+
+// Convert string to lowercase
+string toLowerStr(const string& str) {
+    string result = str;
+    transform(result.begin(), result.end(), result.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    return result;
+}
+
+// Case-insensitive search
+bool caseInsensitiveSearch(const string& text, const string& keyword) {
+    string lowerText = toLowerStr(text);
+    string lowerKeyword = toLowerStr(keyword);
+    return lowerText.find(lowerKeyword) != string::npos;
 }
 
 // ======== Load Log File =========
@@ -261,26 +280,28 @@ void searchLogs() {
     searchHistory.push_back(keyword);
 
     cout << "\n  " << BRIGHT_CYAN << "════════════════════════════════════════════════════════════" << RESET << "\n";
-    cout << "  " << BRIGHT_CYAN << "SEARCH RESULTS FOR: \"" << keyword << "\"" << RESET << "\n";
+    cout << "  " << BRIGHT_CYAN << "SEARCH RESULTS FOR: \"" << keyword << "\" (case-insensitive)" << RESET << "\n";
     cout << "  " << BRIGHT_CYAN << "════════════════════════════════════════════════════════════" << RESET << "\n\n";
 
-    bool found = false;
+    int matchCount = 0;
     ostringstream oss;
     for (const auto& entry : logs) {
-        if (entry.message.find(keyword) != string::npos || 
-            entry.level.find(keyword) != string::npos) {
+        if (caseInsensitiveSearch(entry.message, keyword) || 
+            caseInsensitiveSearch(entry.level, keyword)) {
             
             string levelColor = getLevelColor(entry.level);
 
             oss << "  " << CYAN << entry.timestamp << RESET 
                 << " [" << levelColor << entry.level << RESET << "] " 
                 << entry.message << "\n";
-            found = true;
+            matchCount++;
         }
     }
 
-    if (found) {
+    if (matchCount > 0) {
         cout << oss.str();
+        cout << "\n  " << BRIGHT_CYAN << "─────────────────────────────────────────────────────────────" << RESET << "\n";
+        cout << "  " << BRIGHT_CYAN << "Found: " << matchCount << " matching entries" << RESET << "\n";
     } else {
         cout << "  " << RED << "✗ No matching logs found.\n" << RESET;
     }

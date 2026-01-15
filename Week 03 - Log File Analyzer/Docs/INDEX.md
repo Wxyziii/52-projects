@@ -28,6 +28,20 @@ Welcome! This project has been completely refactored with comprehensive document
 - Fast lookup
 - 2-minute read
 
+### I want to test the application
+➡️ **Start here:** [TEST_FILES_GUIDE.md](TEST_FILES_GUIDE.md)
+- 7 test log files included
+- Testing scenarios
+- Expected results
+- Quick start guide
+
+### I want to understand search
+➡️ **Start here:** [SEARCH_FUNCTIONALITY.md](SEARCH_FUNCTIONALITY.md)
+- How search works
+- Case sensitivity explained
+- Search tips and examples
+- Search history feature
+
 ### I want to see original issues
 ➡️ **Start here:** [CODE_REVIEW.md](CODE_REVIEW.md)
 - All 17 issues identified
@@ -45,9 +59,12 @@ Welcome! This project has been completely refactored with comprehensive document
 | [FIXES_DOCUMENTATION.md](FIXES_DOCUMENTATION.md) | Complete detailed fixes | 794 lines | 20 min |
 | [SUMMARY.md](SUMMARY.md) | Executive summary | 159 lines | 5 min |
 | [QUICK_REFERENCE.md](QUICK_REFERENCE.md) | Quick lookup charts | 142 lines | 2 min |
+| [BUG_FIX_REPORT.md](BUG_FIX_REPORT.md) | Input handling bug fix | 212 lines | 5 min |
+| [TEST_FILES_GUIDE.md](TEST_FILES_GUIDE.md) | Test files documentation | 440 lines | 15 min |
+| [SEARCH_FUNCTIONALITY.md](SEARCH_FUNCTIONALITY.md) | Search behavior guide | 300+ lines | 10 min |
 | [INDEX.md](INDEX.md) | This file | - | 1 min |
 
-**Total Documentation:** 1,439 lines
+**Total Documentation:** 2,300+ lines
 
 ---
 

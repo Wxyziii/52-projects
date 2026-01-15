@@ -225,9 +225,15 @@ This directory contains various test log files designed to test different aspect
 
 #### Test 7: Case Sensitivity
 ```
-1. Search for: "ERROR"
-2. Search for: "error"
-3. Expected: Should find both patterns
+1. Search for: "database"
+2. Expected: Finds "database" but NOT "Database" (case-sensitive)
+3. Search for: "Database"
+4. Expected: Finds "Database" but NOT "database"
+
+Note: Search is CASE-SENSITIVE
+- "error" finds: "error", "timeout error"
+- "ERROR" finds: "[ERROR]" in log levels
+- "Error" finds: "Error" only
 ```
 
 ---
@@ -358,9 +364,11 @@ When viewing logs, verify color coding:
 
 ### If Search Doesn't Find Results
 1. Verify file is loaded
-2. Check spelling
-3. Try searching for log level names
-4. Search is case-sensitive
+2. Try a more general keyword
+3. Check spelling
+4. Try searching for log level names: "INFO", "WARN", "ERROR"
+
+Note: Search is case-insensitive, so capitalization doesn't matter!
 
 ---
 
