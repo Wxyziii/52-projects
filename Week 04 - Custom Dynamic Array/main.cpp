@@ -1,8 +1,7 @@
 #include <iostream>
 #include <utility>
 #include <stdexcept>
-
-using namespace std;
+#include <algorithm>
 
 template<typename T>
 class DynamicArray{
@@ -14,7 +13,7 @@ class DynamicArray{
         T* newData = new T[newCapacity];
 
         for(size_t i = 0; i < size_; ++i) {
-            newData[i] = move(data_[i]);
+            newData[i] = std::move(data_[i]);
         }
 
         delete[] data_;
@@ -23,6 +22,7 @@ class DynamicArray{
     }
 
     public:
+    // ===== Constructors & Destructor =====
 
     DynamicArray()
         : data_(nullptr), size_(0), capacity_(0) {}
@@ -31,15 +31,35 @@ class DynamicArray{
         delete[] data_;
     }
 
+    // Copy constructor
     DynamicArray(const DynamicArray& other) 
         : size_(other.size_), capacity_(other.capacity_) {
-
             data_ = new T[capacity_];
             for(size_t i = 0; i < size_; ++i) {
                 data_[i] = other.data_[i];
             }
         }
 
+    // Copy assignment (exception-safe)
+    DynamicArray& operator=(const DynamicArray& other) {
+        if (this == &other) return *this;
+
+        // Allocate new memory first
+        T* newData = new T[other.capacity_];
+        for(size_t i =0; i < other.size_; ++i) {
+            newData[i] = other.data_[i];
+        }
+
+        // Only modify state after successful allocation
+        delete[] data_;
+        data_ = newData;
+        size_ = other.size_;
+        capacity_ = other.capacity_;
+
+        return *this;
+    }
+
+    // Move constructor
     DynamicArray(DynamicArray&& other) noexcept
         : data_(other.data_), size_(other.size_), capacity_(other.capacity_) {
 
@@ -48,18 +68,8 @@ class DynamicArray{
             other.capacity_ = 0;
         }
 
-    DynamicArray& operator=(const DynamicArray& other) {
-        if (this == &other) return *this;
-        delete[] data_;
-        size_ = other.size_;
-        capacity_ = other.capacity_;
-        data_ = new T[capacity_];
-        for (size_t i = 0; i < size_; ++i) {
-            data_[i] = other.data_[i];
-        }
-        return *this;
-    }
 
+    // Move assignment
     DynamicArray& operator=(DynamicArray&& other) noexcept {
         if(this == &other) return *this;
 
@@ -75,6 +85,8 @@ class DynamicArray{
 
         return *this;
     }
+
+    // ===== Capacity =====
 
     size_t size() const {
         return size_;
@@ -93,21 +105,75 @@ class DynamicArray{
             reallocate(newCapacity);
         }
     }
+    
+    void shrink_to_fit() {
+        if(size_ < capacity_) {
+            if(size_ == 0) {
+                delete[] data_;
+                data_ = nullptr;
+                capacity_ = 0;
+            } else {
+                reallocate(size_);
+            }
+        }
+    }
 
     void clear() {
+        for(size_t i = 0; i < size_; ++i) {
+            data_[i].~T();
+        }
         size_ = 0;
     }
 
+    // ===== Element Access =====
+
     T& operator[](size_t index) {
-        if (index >= size_) throw out_of_range("Index out of range");
         return data_[index];
     }
 
     const T& operator[](size_t index) const {
-        if (index >= size_) throw out_of_range("Index out of range");
         return data_[index];
     }
 
+    T& at(size_t index) {
+        if (index >= size_) {
+            throw std::out_of_range("Index out of range");
+        }
+        return data_[index];
+    }
+
+    const T& at (size_t index) const {
+        if(index >= size_) {
+            throw std::out_of_range("Index out of range");
+        }
+        return data_[index];
+    }
+
+    T& front() {
+        return data_[0];
+    }
+
+    const T& front() const{
+        return data_[0];
+    }
+
+    T& back() {
+        return data_[size_ - 1];
+    }
+
+    const T& back() const {
+        return data_[size_ - 1];
+    }
+
+    T* data() noexcept {
+        return data_;
+    }
+
+    const T* data() const noexcept {
+        return data_;
+    }
+
+    // ===== Modifiers =====
     void push_back(const T& value) {
         if(size_ == capacity_) {
             size_t newCapacity = (capacity_ == 0) ? 1 : capacity_ * 2;
@@ -115,7 +181,7 @@ class DynamicArray{
         }
 
         data_[size_] = value;
-        size_++;
+        ++size_;
     }
 
     void push_back(T&& value) {
@@ -124,68 +190,123 @@ class DynamicArray{
             reallocate(newCapacity);
         }
 
-        data_[size_] = move(value);
+        data_[size_] = std::move(value);
+        ++size_;
+    }
+
+    template<typename... Args>
+    void emplace_back(Args&&... args) {
+        if(size_ == capacity_) {
+            size_t newCapacity = (capacity_ == 0) ? 1 : capacity_ * 2;
+            reallocate(newCapacity);
+        }
+
+        new(&data_[size_]) T(std::forward<Args>(args)...);
         size_++;
     }
 
     void pop_back() {
-        if(size_ == 0) return;
-        size_--;
+        if(size_ > 0) {
+            --size_;
+        }
     }
-    T* begin() {
+
+    // ===== Iterators =====
+
+    T* begin() noexcept {
         return data_;
     }
 
-    T* end() {
+    T* end() noexcept {
         return data_ + size_;
     }
 
-    const T* begin() const {
+    const T* begin() const noexcept {
         return data_;
     }
 
-    const T* end() const {
+    const T* end() const noexcept {
+        return data_ + size_;
+    }
+
+    const T* cbegin() const noexcept {
+        return data_;
+    }
+
+    const T* cend() const noexcept {
         return data_ + size_;
     }
 };
 
+// ======== Testing ========
+
 int main() {
     DynamicArray<int> arr;
 
-    cout << "Pushing values...\n";
+    std::cout << "=== Push Back Test ===\n";
     for (int i = 1; i <= 10; ++i) {
         arr.push_back(i * 10);
-        cout << "Size: " << arr.size() << ", Capacity: " << arr.capacity() << endl;
+        std::cout << "Size: " << arr.size()
+                  << ", Capacity: " << arr.capacity() << "\n";
     }
 
-    cout << "\nContents:\n"; 
-    for(int x : arr) {
-        cout << x << " ";
+    std::cout << "\n=== Contents ===\n";
+    for (int x : arr) {
+        std::cout << x << " ";
     }
-    cout << '\n';
+    std::cout << "\n";
 
-    cout << "\nCopy test...\n";
+    std::cout << "\n=== Front/Back Access ===\n";
+    std::cout << "Front: " << arr.front() << "\n";
+    std::cout << "Back: " << arr.back() << "\n";
+
+    std::cout << "\n=== Bounds-Checked Access (at) ===\n";
+    try {
+        std::cout << "arr.at(5) = " << arr.at(5) << "\n";
+        std::cout << "arr.at(100) = " << arr.at(100) << "\n";  // Should throw
+    } catch (const std::out_of_range& e) {
+        std::cout << "Caught exception: " << e.what() << "\n";
+    }
+
+    std::cout << "\n=== Copy Test ===\n";
     DynamicArray<int> copy = arr;
     copy.push_back(999);
 
-    cout << "Original size: " << arr.size() << endl;
-    cout << "Copy size: " << copy.size() << endl;
+    std::cout << "Original size: " << arr.size() << "\n";
+    std::cout << "Copy size: " << copy.size() << "\n";
 
-    cout << "\nMove test...\n";
-    DynamicArray<int> moved = move(arr);
-    cout << "Moved size: " << moved.size() << endl;
-    cout << "Original size after move: " << arr.size() << endl;
+    std::cout << "\n=== Move Test ===\n";
+    DynamicArray<int> moved = std::move(arr);
+    std::cout << "Moved size: " << moved.size() << "\n";
+    std::cout << "Original size after move: " << arr.size() << "\n";
 
-    cout << "\nPop back...\n";
+    std::cout << "\n=== Pop Back ===\n";
     moved.pop_back();
-    for(int x : moved) {
-        cout << x << " ";
+    for (int x : moved) {
+        std::cout << x << " ";
     }
-    cout << "\n";
+    std::cout << "\n";
 
-    cout << "\nClear...\n";
+    std::cout << "\n=== Emplace Back Test ===\n";
+    DynamicArray<std::string> strings;
+    strings.emplace_back("Hello");
+    strings.emplace_back("World");
+    for (const auto& s : strings) {
+        std::cout << s << " ";
+    }
+    std::cout << "\n";
+
+    std::cout << "\n=== Shrink to Fit ===\n";
+    moved.reserve(100);
+    std::cout << "Before shrink - Size: " << moved.size() 
+              << ", Capacity: " << moved.capacity() << "\n";
+    moved.shrink_to_fit();
+    std::cout << "After shrink - Size: " << moved.size() 
+              << ", Capacity: " << moved.capacity() << "\n";
+
+    std::cout << "\n=== Clear ===\n";
     moved.clear();
-    cout << "Empty: " << moved.empty() << endl;
+    std::cout << "Empty: " << std::boolalpha << moved.empty() << "\n";
 
     return 0;
 }
